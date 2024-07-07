@@ -1,0 +1,177 @@
+#An AI which learns a player's playing patterns and predicts the next input and beats you
+import random as rd
+from collections import Counter as cou
+
+directory = r'file-path-here (ONLY CSV)'
+
+#AI Variables
+predicted = ''
+cPrevious = ''
+prPrevious = ''
+w = 0
+max = 0
+t = 0
+drawn = 0
+isPlayerCopyingMe = 0
+isPlayerCopyingMyPredictions = 0
+predictable = 1
+predictedIncorrectly = 0
+predictedCorrectly = 0
+pPoints = 0
+cPoints = 0
+playerPrevious = []
+computerPrevious = []
+predictedPrevious = []
+lost = []
+pPrevious = ''
+ADD = ''
+
+p = input("Rock paper scissors?(y/n)")
+c = ''
+x = 0
+
+if p.find('y') != -1:
+    print('OK')
+    while not t >= 100:
+        #reading train file
+        possibilities = []
+        traintoedit = open(directory, 'a')
+        train = open(directory, 'r')
+        trainList = list(train.read())
+        while '\n' in trainList:
+            trainList.remove('\n')
+
+        #makes pairs from nth input and the previous input to check for possibilities
+        for i in range(1, len(trainList)):
+            Possibility = trainList[i - 1] + trainList[i]
+            possibilities.append(Possibility)
+
+        #game start
+        p = input('Make ur choice! (r/p/s)')
+        traintoedit.write('\n' + p)  #adds input to file
+        possibilitiesnew = []
+
+        #Chooses which parameter to use
+        if len(playerPrevious) > 2:
+            print('choosing')  #know when the AI kicks in
+            pPrevious = playerPrevious[w - 1]
+            for i in possibilities:
+                if i[0] == pPrevious:
+                    possibilitiesnew.append(i)
+
+            if predictedCorrectly > 2 or predictedIncorrectly > 2 or drawn > 2:
+                if predictable == 1:
+                    predictable = 0
+                elif predictable == 0:
+                    predictable = 1
+            #Predicts the most common input
+            if predictable == 1:
+                print('straightforward')
+                data = cou(possibilitiesnew)
+                predicted = data.most_common(1)[0][0][1]
+            else:
+                #predicts how the player switches up and tries to confuse it
+                print('notstraightforward')
+                data = cou(lost)
+                if len(lost) > 2:
+                    predicted = data.most_common(1)[0][0][0]
+                else:
+                    data = cou(possibilitiesnew)
+                    predicted = data.most_common(1)[0][0][1]
+                max = 1
+        else:  #The first three predictions are random...
+            x = rd.randint(1, 3)
+        #AI parameters
+        #checks whether the player is copying computer's previous inputs
+        if len(computerPrevious) > 2:
+            cPrevious = computerPrevious[w - 1]
+            if cPrevious == p:
+                isPlayerCopyingMe += 1
+            if isPlayerCopyingMe > 2:
+                predicted = cPrevious
+                isPlayerCopyingMe = 0
+
+        #checks whether the player is copying the previous predicted
+        if len(predictedPrevious) > 2:
+            prPrevious = predictedPrevious[w - 1]
+            if prPrevious == p:
+                isPlayerCopyingMyPredictions += 1
+
+            if isPlayerCopyingMyPredictions > 2:
+                predicted = prPrevious
+                isPlayerCopyingMyPredictions = 0
+        print('I predicted', predicted)
+        #x is just the random variable
+        if x == 1:
+            c = 'r'
+        if x == 2:
+            c = 's'
+        if x == 3:
+            c = 'p'
+        #predicted
+        if predicted == 'r':
+            c = 'p'
+        if predicted == 'p':
+            c = 's'
+        if predicted == 's':
+            c = 'r'
+        if p == 'Stop':
+            print('Okie')
+            break
+
+        computerPrevious.append(c)  #update list for AI parameters
+        print('Rock')
+
+        print('Paper')
+
+        print('Scissor')
+
+        print('Shoot!')
+
+        #Win or Lose checker
+        if p == 'r' and c == 'p' or p == 'p' and c == 's' or p == 's' and c == 'r':
+            print('I chose', c)
+            print('I WON')
+            predictedIncorrectly = 0
+            predictedCorrectly += 1
+            drawn = 0
+            ADD = p
+            cPoints += 1
+            t += 1
+
+        if p == 'r' and c == 's' or p == 'p' and c == 'r' or p == 's' and c == 'p':
+            if max == 1:
+                ADD = p + predicted
+                lost.append(ADD)  #adds player tactics
+                max = 0
+            predictedCorrectly = 0
+            predictedIncorrectly += 1  #punishment
+            drawn = 0
+            print('I chose', c)
+            print('YOU WON')
+            ADD = p
+            pPoints += 1
+            t += 1
+
+        if p == c:
+            print('I chose', c)
+            print('Draw')
+            predictedIncorrectly = 0
+            predictedCorrectly = 0
+            drawn += 1
+            ADD = p
+
+        #award for computer
+        if predicted == p:
+            predictedCorrectly += 1
+
+        #more updates
+        print('You:', pPoints, 'Me:', cPoints)
+        playerPrevious.append(ADD)
+        predictedPrevious.append(predicted)
+        print(playerPrevious)
+        w += 1
+    print("100 done")
+    print('COMPUTER WIN RATE =', (((cPoints / t) * 100)))
+else:
+    print('Ok nvm')
